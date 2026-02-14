@@ -85,7 +85,10 @@ export async function POST(
     await poll.save();
     recordVote(ipHash);
 
-    const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
+    const totalVotes = poll.options.reduce(
+      (sum: number, o: { text: string; votes: number }) => sum + o.votes,
+      0
+    );
     await sendPollUpdateToSSE(id, {
       question: poll.question,
       options: poll.options,
