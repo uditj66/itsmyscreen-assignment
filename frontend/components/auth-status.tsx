@@ -31,7 +31,8 @@ export function AuthStatus() {
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={() => signIn("google")}>
+    <Button type="button" variant="outline" size="sm" onClick={() => signIn("google")} className="gap-2">
+      <img src="/google.svg" alt="" className="h-5 w-5" aria-hidden />
       Sign in with Google
     </Button>
   );
