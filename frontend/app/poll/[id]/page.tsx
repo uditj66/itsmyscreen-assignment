@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { z } from "zod";
 import {
   Card,
   CardContent,
@@ -14,7 +15,16 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
-const POLL_INTERVAL_MS = 2000;
+const ssePayloadSchema = z.object({
+  question: z.string(),
+  options: z.array(
+    z.object({
+      text: z.string(),
+      votes: z.number(),
+    })
+  ),
+  totalVotes: z.number().optional(),
+});
 
 type PollOption = {
   text: string;
@@ -33,6 +43,8 @@ type ApiResponse =
   | { success: true; data: PollData }
   | { success: false; message: string };
 
+const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_SERVER_URL ?? "";
+
 export default function PollPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
@@ -42,55 +54,71 @@ export default function PollPage() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [voting, setVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchPoll = useCallback(async (): Promise<PollData | null> => {
-    if (!id) return null;
-    try {
-      const res = await fetch(`/api/poll/${id}`);
-      const json: ApiResponse = await res.json();
+  useEffect(() => {
+    if (!id) return;
 
-      if (!res.ok || !json.success || !("data" in json)) {
-        setError("message" in json ? json.message : "Failed to load poll.");
-        return null;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/poll/${id}`);
+        const json: ApiResponse = await res.json();
+
+        if (cancelled) return;
+
+        if (!res.ok || !json.success || !("data" in json)) {
+          setError("message" in json ? json.message : "Failed to load poll.");
+          setLoading(false);
+          return;
+        }
+
+        setPoll(json.data);
+        setError(null);
+      } catch {
+        if (!cancelled) {
+          setError("Network error. Please try again.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    })();
 
-      setPoll(json.data);
-      setError(null);
-      return json.data;
-    } catch {
-      setError("Network error. Please try again.");
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
-    fetchPoll();
-  }, [fetchPoll]);
+    if (!id || !sseBaseUrl) return;
 
-  useEffect(() => {
-    if (!id || hasVoted) return;
+    const url = `${sseBaseUrl.replace(/\/$/, "")}/stream/${id}`;
+    const eventSource = new EventSource(url);
 
-    intervalRef.current = setInterval(() => {
-      fetch(`/api/poll/${id}`)
-        .then((res) => res.json())
-        .then((json: ApiResponse) => {
-          if (json.success && "data" in json) {
-            setPoll(json.data);
-          }
-        })
-        .catch(() => {});
-    }, POLL_INTERVAL_MS);
+    eventSource.addEventListener("update", (event: MessageEvent) => {
+      try {
+        const raw = JSON.parse(event.data as string);
+        const parsed = ssePayloadSchema.safeParse(raw);
+        if (!parsed.success) return;
+
+        const { question, options } = parsed.data;
+        setPoll((prev) => {
+          if (!prev) return null;
+          return { ...prev, question, options };
+        });
+      } catch {
+        // ignore invalid payload
+      }
+    });
+
+    eventSource.onerror = () => {
+      eventSource.close();
+    };
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+      eventSource.close();
     };
-  }, [id, hasVoted, fetchPoll]);
+  }, [id]);
 
   const handleVote = async () => {
     if (poll == null || selectedOption == null) return;
@@ -102,21 +130,14 @@ export default function PollPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ optionIndex: selectedOption }),
       });
-      const json: ApiResponse = await res.json();
+      const json = await res.json();
 
       if (!res.ok || !json.success) {
         setError("message" in json ? json.message : "Failed to vote.");
         return;
       }
 
-      if ("data" in json) {
-        setPoll(json.data);
-        setHasVoted(true);
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      }
+      setHasVoted(true);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -161,9 +182,9 @@ export default function PollPage() {
   return (
     <main className="min-h-screen p-4 md:p-6">
       <div className="mx-auto max-w-lg space-y-4">
-        {!hasVoted && (
+        {!hasVoted && sseBaseUrl && (
           <p className="text-center text-sm text-muted-foreground" aria-live="polite">
-            Live updating…
+            Live
           </p>
         )}
 

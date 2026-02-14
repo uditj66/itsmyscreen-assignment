@@ -4,20 +4,11 @@ import { connectDB } from "@/lib/db";
 import { Poll } from "@/models/Poll";
 import { getClientIp, hashIp } from "@/lib/hash-ip";
 import { checkVoteRateLimit, recordVote } from "@/lib/rate-limit";
+import { sendPollUpdateToSSE } from "@/lib/sse";
 
 const voteSchema = z.object({
   optionIndex: z.number().int().min(0),
 });
-
-function toPublicPoll(poll: { _id: unknown; question: string; options: { text: string; votes: number }[]; createdAt?: Date; updatedAt?: Date }) {
-  return {
-    id: String(poll._id),
-    question: poll.question,
-    options: poll.options,
-    createdAt: poll.createdAt,
-    updatedAt: poll.updatedAt,
-  };
-}
 
 export async function POST(
   request: NextRequest,
@@ -94,10 +85,14 @@ export async function POST(
     await poll.save();
     recordVote(ipHash);
 
-    return NextResponse.json({
-      success: true,
-      data: toPublicPoll(poll),
+    const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
+    await sendPollUpdateToSSE(id, {
+      question: poll.question,
+      options: poll.options,
+      totalVotes,
     });
+
+    return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json(
       { success: false, message: err instanceof Error ? err.message : "Failed to record vote." },
