@@ -1,13 +1,5 @@
 import mongoose, { Schema, model, models } from "mongoose";
 
-const voterSchema = new Schema(
-  {
-    ipHash: { type: String, required: true },
-    votedAt: { type: Date, required: true, default: Date.now },
-  },
-  { _id: false }
-);
-
 const optionSchema = new Schema(
   {
     text: { type: String, required: true },
@@ -31,7 +23,6 @@ const pollSchema = new Schema(
         message: "Poll must have at least 2 options.",
       },
     },
-    voters: { type: [voterSchema], default: [] },
   },
   { timestamps: true }
 );

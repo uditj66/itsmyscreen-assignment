@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     const poll = await Poll.create({
       question,
       options: options.map((text) => ({ text, votes: 0 })),
-      voters: [],
     });
 
     return NextResponse.json({

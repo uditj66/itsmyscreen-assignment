@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const PORT = process.env.PORT ?? "8000";
+const PORT = process.env.PORT ?? "5000";
 const SSE_SECRET = process.env.SSE_SECRET;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? "*";
 if (!SSE_SECRET) {

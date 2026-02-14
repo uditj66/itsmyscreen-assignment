@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { connectDB } from "@/lib/db";
 import { Poll } from "@/models/Poll";
-import { getClientIp, hashIp } from "@/lib/hash-ip";
-import { checkVoteRateLimit, recordVote } from "@/lib/rate-limit";
 import { sendPollUpdateToSSE } from "@/lib/sse";
 
 const voteSchema = z.object({
@@ -43,17 +41,6 @@ export async function POST(
       );
     }
 
-    const ip = getClientIp(request);
-    const ipHash = hashIp(ip);
-
-    const rate = checkVoteRateLimit(ipHash);
-    if (!rate.allowed) {
-      return NextResponse.json(
-        { success: false, message: "Please wait a few seconds before voting again." },
-        { status: 429 }
-      );
-    }
-
     const poll = await Poll.findById(id);
 
     if (!poll) {
@@ -72,18 +59,8 @@ export async function POST(
       );
     }
 
-    const alreadyVoted = poll.voters.some((v: { ipHash: string }) => v.ipHash === ipHash);
-    if (alreadyVoted) {
-      return NextResponse.json(
-        { success: false, message: "You have already voted in this poll." },
-        { status: 409 }
-      );
-    }
-
-    poll.voters.push({ ipHash, votedAt: new Date() });
     poll.options[optionIndex].votes += 1;
     await poll.save();
-    recordVote(ipHash);
 
     const totalVotes = poll.options.reduce(
       (sum: number, o: { text: string; votes: number }) => sum + o.votes,

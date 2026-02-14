@@ -3,7 +3,7 @@ import cors from "cors";
 import type { PollId, ClientSet, NotifyBody } from "./types.js";
 import dotenv from "dotenv";
 dotenv.config();
-const PORT = process.env.PORT ?? "8000";
+const PORT = process.env.PORT ?? "5000";
 const SSE_SECRET = process.env.SSE_SECRET;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? "*";
 
