@@ -50,7 +50,7 @@ export async function GET(
       req: request,
       secret: process.env.AUTH_SECRET,
     });
-    const userId = token?.sub ?? null;
+    const userId = (token?.id ?? token?.sub) ?? null;
 
     const poll = userId
       ? await Poll.findById(id).select("+voterUserIds").lean()

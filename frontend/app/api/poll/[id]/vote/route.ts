@@ -17,7 +17,8 @@ export async function POST(
     req: request,
     secret: process.env.AUTH_SECRET,
   });
-  const userId = token?.sub ?? null;
+  // Use token.id (Google sub) for stable cross-device identity; fallback to token.sub
+  const userId = (token?.id ?? token?.sub) ?? null;
   if (!userId) {
     return NextResponse.json(
       { success: false, message: "Sign in with Google to vote." },
@@ -54,25 +55,15 @@ export async function POST(
       );
     }
 
-    const poll = await Poll.findById(id).select("+voterUserIds").lean();
+    const { optionIndex } = parsed.data;
 
+    const poll = await Poll.findById(id).select("+voterUserIds options").lean();
     if (!poll) {
       return NextResponse.json(
         { success: false, message: "Poll not found." },
         { status: 404 }
       );
     }
-
-    const voterIds = (poll as { voterUserIds?: string[] }).voterUserIds ?? [];
-    if (voterIds.includes(userId)) {
-      return NextResponse.json(
-        { success: false, message: "You have already voted." },
-        { status: 409 }
-      );
-    }
-
-    const { optionIndex } = parsed.data;
-
     if (optionIndex >= poll.options.length) {
       return NextResponse.json(
         { success: false, message: "Invalid option index." },
@@ -80,19 +71,23 @@ export async function POST(
       );
     }
 
-    const updated = await Poll.findByIdAndUpdate(
-      id,
+    // Atomic update: only apply if user has NOT voted (prevents race when voting from multiple devices)
+    const updated = await Poll.findOneAndUpdate(
       {
-        $inc: { [`options.${optionIndex}.votes`]: 1 },
+        _id: id,
+        voterUserIds: { $ne: userId },
+      },
+      {
         $push: { voterUserIds: userId },
+        $inc: { [`options.${optionIndex}.votes`]: 1 },
       },
       { new: true }
     );
 
     if (!updated) {
       return NextResponse.json(
-        { success: false, message: "Failed to record vote." },
-        { status: 500 }
+        { success: false, message: "You have already voted." },
+        { status: 409 }
       );
     }
 
