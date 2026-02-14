@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useSession, signIn } from "next-auth/react";
 import { z } from "zod";
 import {
   Card,
@@ -37,6 +38,7 @@ type PollData = {
   options: PollOption[];
   createdAt?: string;
   updatedAt?: string;
+  hasVoted?: boolean;
 };
 
 type ApiResponse =
@@ -48,6 +50,7 @@ const sseBaseUrl = process.env.NEXT_PUBLIC_SSE_SERVER_URL ?? "";
 export default function PollPage() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
+  const { data: session, status: sessionStatus } = useSession();
   const [poll, setPoll] = useState<PollData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +58,9 @@ export default function PollPage() {
   const [voting, setVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const isAuthenticated = sessionStatus === "authenticated";
+  const canVote = isAuthenticated && !hasVoted;
 
   const copyPollLink = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -87,6 +93,7 @@ export default function PollPage() {
         }
 
         setPoll(json.data);
+        setHasVoted(Boolean(json.data.hasVoted));
         setError(null);
       } catch {
         if (!cancelled) {
@@ -145,6 +152,15 @@ export default function PollPage() {
       });
       const json = await res.json();
 
+      if (res.status === 401) {
+        setError("message" in json ? json.message : "Sign in with Google to vote.");
+        return;
+      }
+      if (res.status === 409) {
+        setHasVoted(true);
+        setError(null);
+        return;
+      }
       if (!res.ok || !json.success) {
         setError("message" in json ? json.message : "Failed to vote.");
         return;
@@ -156,6 +172,11 @@ export default function PollPage() {
     } finally {
       setVoting(false);
     }
+  };
+
+  const handleSignIn = () => {
+    const callbackUrl = typeof window !== "undefined" ? window.location.href : "/";
+    signIn("google", { callbackUrl });
   };
 
   if (loading) {
@@ -195,7 +216,7 @@ export default function PollPage() {
   return (
     <main className="min-h-screen p-4 md:p-6">
       <div className="mx-auto max-w-lg space-y-4">
-        {!hasVoted && sseBaseUrl && (
+        {canVote && sseBaseUrl && (
           <p className="text-center text-sm text-muted-foreground" aria-live="polite">
             Live
           </p>
@@ -258,7 +279,18 @@ export default function PollPage() {
               })}
             </div>
 
-            {!hasVoted && (
+            {!isAuthenticated && !hasVoted && (
+              <div className="rounded-lg border border-dashed p-4 text-center">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Sign in with Google to vote. One vote per user.
+                </p>
+                <Button onClick={handleSignIn} className="w-full">
+                  Sign in with Google
+                </Button>
+              </div>
+            )}
+
+            {canVote && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {poll.options.map((opt, i) => (
                   <Button
@@ -276,7 +308,7 @@ export default function PollPage() {
               </div>
             )}
 
-            {!hasVoted && selectedOption !== null && (
+            {canVote && selectedOption !== null && (
               <Button
                 className="w-full"
                 disabled={voting}

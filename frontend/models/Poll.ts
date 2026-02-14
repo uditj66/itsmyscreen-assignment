@@ -23,6 +23,11 @@ const pollSchema = new Schema(
         message: "Poll must have at least 2 options.",
       },
     },
+    voterUserIds: {
+      type: [String],
+      default: [],
+      select: false,
+    },
   },
   { timestamps: true }
 );
