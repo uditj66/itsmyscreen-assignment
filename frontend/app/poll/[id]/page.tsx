@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
 
 const ssePayloadSchema = z.object({
   question: z.string(),
@@ -54,6 +54,19 @@ export default function PollPage() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [voting, setVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const copyPollLink = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      setCopiedLink(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -194,6 +207,26 @@ export default function PollPage() {
             <CardDescription>
               {totalVotes} vote{totalVotes !== 1 ? "s" : ""} total
             </CardDescription>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={copyPollLink}
+              className="mt-2 w-fit"
+              aria-label={copiedLink ? "Link copied" : "Copy poll link"}
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="h-4 w-4" aria-hidden />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" aria-hidden />
+                  Copy link
+                </>
+              )}
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (

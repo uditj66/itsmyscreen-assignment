@@ -50,7 +50,7 @@ export default function HomePage() {
   const options = watch("options") ?? ["", ""];
 
   const addOption = () => {
-    setValue("options", [...options, ""], { shouldValidate: true });
+    setValue("options", [...options, ""], { shouldValidate: false });
   };
 
   const removeOption = (index: number) => {
@@ -58,7 +58,7 @@ export default function HomePage() {
     setValue(
       "options",
       options.filter((_, i) => i !== index),
-      { shouldValidate: true }
+      { shouldValidate: false }
     );
   };
 

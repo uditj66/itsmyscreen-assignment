@@ -73,3 +73,42 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+button {
+  cursor: pointer;
+}
+
+/* Force input value visible (typed, pasted, or from suggestion) */
+input {
+  color: var(--foreground);
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+}
+input::placeholder {
+  color: var(--muted-foreground);
+  -webkit-text-fill-color: var(--muted-foreground);
+}
+
+/* Override browser autofill/suggestion styling so value is always visible */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground) !important;
+  color: var(--foreground) !important;
+  -webkit-box-shadow: 0 0 0 9999px var(--background) inset !important;
+  box-shadow: 0 0 0 9999px var(--background) inset !important;
+  caret-color: var(--foreground) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--foreground) !important;
+    color: var(--foreground) !important;
+    -webkit-box-shadow: 0 0 0 9999px var(--background) inset !important;
+    box-shadow: 0 0 0 9999px var(--background) inset !important;
+  }
+}
