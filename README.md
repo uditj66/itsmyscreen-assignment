@@ -18,6 +18,9 @@ A full-stack application for creating and voting in polls with **live updates** 
 - [Setup & Run](#setup--run)
 - [Live Updates Flow](#live-updates-flow)
 - [Authentication](#authentication)
+- [Fairness Mechanisms (One Vote per Account)](#fairness-mechanisms-one-vote-per-account)
+- [Why Not IP- or Cookie-Based Voting?](#why-not-ip--or-cookie-based-voting)
+- [What We Could Improve Next](#what-we-could-improve-next)
 
 ---
 
@@ -280,6 +283,50 @@ Details and troubleshooting: see **LIVE-UPDATES-ANALYSIS.md**.
 - **Identity:** Google `sub` is stored in JWT as `token.id` and exposed as `session.user.id`; used as stable user id for `voterUserIds` (one vote per user across devices).
 - **Routes:** No middleware; pages that need auth (e.g. vote) check session or token in API and return 401 if missing.
 - **Sign-in page:** Custom `signIn: "/"` so sign-in UI is the home page.
+
+---
+
+## Fairness Mechanisms (One Vote per Account)
+
+The app enforces **one vote per account** and prevents abuse (e.g. voting from the same account on two devices at once) using two mechanisms:
+
+### 1. Authentication-based identity
+
+- Voting is **gated behind sign-in**: `POST /api/poll/[id]/vote` uses NextAuth’s JWT (`getToken`). If the user is not signed in, the API returns **401** and the UI prompts “Sign in with Google to vote.”
+- **Stable user ID:** The Google OAuth `sub` is stored in the JWT as `token.id` and exposed as `session.user.id`. This ID is used as the voter identity and stored in the poll’s `voterUserIds` array.
+- Because identity is tied to the **Google account**, one person has one identity across devices and browsers. They cannot get a second vote by switching devices or browsers without using another Google account.
+
+### 2. Race-condition handling (same account, two devices/tabs)
+
+- Even with auth, the same user could open the poll in two tabs or on two devices and click “Vote” at nearly the same time. Without care, both requests could pass the “not voted yet” check and both could be recorded.
+- The vote is applied with a **single atomic MongoDB update**: `findOneAndUpdate` with a condition that the poll’s `voterUserIds` does **not** already contain the current `userId`. The update both appends `userId` to `voterUserIds` and increments the chosen option’s vote count in one operation.
+- If two requests from the same user run concurrently, only one update matches the condition and succeeds; the other finds no document to update (user already in `voterUserIds`) and the API returns **409 “You have already voted.”** So duplicate votes from the same account are prevented even under race conditions.
+
+---
+
+## Why Not IP- or Cookie-Based Voting?
+
+Alternatives like **hashing IP** or **using cookies** to limit votes are simpler but have serious drawbacks. We use auth + server-side `voterUserIds` instead.
+
+### Limitations of IP-based methods (e.g. hashing IP)
+
+- **Same network, different people:** Many users can share one IP (home WiFi, office, school). If “one vote per IP,” only the first voter from that network can vote; others see “already voted” even though they are different people.
+- **Same person, different IP (VPN / mobile):** One user can vote once from home, then use a VPN or switch to mobile data and vote again. So IP-based limiting is both unfair (blocks legitimate users) and easy to bypass (VPN/different network).
+
+### Limitations of cookie-based methods
+
+- **Deleting cookies:** A user can clear cookies (or use incognito) and vote again; the server sees a “new” visitor and allows a second vote.
+- **Different browser or device:** Cookies are per-browser (and per-device). The same person can vote once in Chrome and again in Firefox, or on phone and laptop, and get multiple votes.
+
+So cookie- and IP-based approaches either block legitimate voters (same WiFi) or fail to stop one person from voting multiple times (VPN, clear cookies, different browser). Using **authentication (Google account)** plus **atomic server-side checks** gives one stable identity per person and prevents double-voting even when the same account is used from multiple devices or tabs.
+
+---
+
+## What We Could Improve Next
+
+- **SSE reconnection:** Automatically reconnect the EventSource when the connection drops so live updates keep working after a short network glitch.
+- **Copy-link feedback:** Show a short toast or message when “Copy link” succeeds (or fails) so the user knows the link was copied.
+- **Close poll:** Let the poll creator close a poll (e.g. a “Close poll” button) so no new votes can be cast and the UI shows “Poll closed.”
 
 ---
 
