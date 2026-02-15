@@ -273,7 +273,7 @@ Copy from `frontend/.env.example`.
 4. SSE service receives notify, validates Bearer token, and sends `event: update` with JSON to all clients for that `pollId`.
 5. Poll page receives event, parses JSON, validates with Zod, updates state → UI re-renders with new counts.
 
-Details and troubleshooting: see **LIVE-UPDATES-ANALYSIS.md**.
+
 
 ---
 
