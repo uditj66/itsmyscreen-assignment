@@ -193,7 +193,7 @@ Run on port **5000** by default (`sse-service`).
 - **No `NEXT_PUBLIC_SSE_SERVER_URL`:** EventSource not opened; no “Live” indicator; poll still works without live updates.
 - **Invalid SSE payload:** Poll page uses Zod `ssePayloadSchema.safeParse`; invalid events ignored.
 - **EventSource error:** `onerror` closes the connection (no automatic reconnect in current code).
-- **Missing `SSE_SERVER_URL` or `SSE_SECRET` (frontend):** `sendPollUpdateToSSE` returns without POSTing; vote still saved but no broadcast (see LIVE-UPDATES-ANALYSIS.md for dev logging).
+- **Missing `SSE_SERVER_URL` or `SSE_SECRET` (frontend):** `sendPollUpdateToSSE` returns without POSTing; vote still saved but no broadcast.
 - **Notify auth failure:** SSE service returns 401 if Bearer token does not match `SSE_SECRET`.
 
 ### Auth

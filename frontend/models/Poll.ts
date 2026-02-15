@@ -26,7 +26,7 @@ const pollSchema = new Schema(
     voterUserIds: {
       type: [String],
       default: [],
-      select: false,
+      select: false, //The + overrides select: false.
     },
   },
   { timestamps: true }

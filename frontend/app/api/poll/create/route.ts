@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
     const parsed = createPollSchema.safeParse(body);
 
     if (!parsed.success) {
-      const first = parsed.error.flatten().formErrors[0] ?? parsed.error.message;
+      const flattened = z.flattenError(parsed.error);
+      const first = flattened.formErrors[0] ?? Object.values(flattened.fieldErrors).flat()[0] ?? parsed.error.message;
       return NextResponse.json(
         { success: false, message: typeof first === "string" ? first : "Validation failed." },
         { status: 400 }

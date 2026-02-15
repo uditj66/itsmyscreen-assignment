@@ -54,8 +54,8 @@ export async function GET(
 
     const poll = userId
       ? await Poll.findById(id).select("+voterUserIds").lean()
+      //The + overrides select: false.
       : await Poll.findById(id).lean();
-
     if (!poll) {
       return NextResponse.json(
         { success: false, message: "Poll not found." },
