@@ -20,7 +20,7 @@ const createPollSchema = z.object({
         .string()
         .min(1, "Option cannot be empty")
         .transform((s) => s.trim())
-        .pipe(z.string().min(1, "Option cannot be empty"))
+        .pipe(z.string().min(1, "Option cannot be empty")),
     )
     .min(2, "At least 2 options are required"),
 });
@@ -56,7 +56,7 @@ export default function HomePage() {
     setValue(
       "options",
       options.filter((_, i) => i !== index),
-      { shouldValidate: false }
+      { shouldValidate: false },
     );
   };
 
@@ -100,7 +100,6 @@ export default function HomePage() {
         {/* Headline */}
         <div className="mb-10 text-center">
           <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/80 px-3 py-1 text-xs font-medium text-zinc-400">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500/80" aria-hidden />
             Real-time results
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
@@ -141,7 +140,9 @@ export default function HomePage() {
                 {...register("question")}
               />
               {errors.question && (
-                <p className="text-xs text-rose-400">{errors.question.message}</p>
+                <p className="text-xs text-rose-400">
+                  {errors.question.message}
+                </p>
               )}
             </div>
 
@@ -180,7 +181,9 @@ export default function HomePage() {
                 </p>
               )}
               {errors.options && typeof errors.options.message === "string" && (
-                <p className="text-xs text-rose-400">{errors.options.message}</p>
+                <p className="text-xs text-rose-400">
+                  {errors.options.message}
+                </p>
               )}
               <Button
                 type="button"

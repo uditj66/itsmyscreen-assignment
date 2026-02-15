@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Check, Link2 } from "lucide-react";
+import { Loader2, Check, ClipboardCopyIcon } from "lucide-react";
 
 const ssePayloadSchema = z.object({
   question: z.string(),
@@ -268,7 +268,7 @@ export default function PollPage() {
                 </span>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   onClick={copyPollLink}
                   className="h-8 gap-1.5 rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
@@ -281,7 +281,7 @@ export default function PollPage() {
                     </>
                   ) : (
                     <>
-                      <Link2 className="h-3.5 w-3.5" aria-hidden />
+                      <ClipboardCopyIcon className="h-3.5 w-3.5" aria-hidden />
                       <span className="text-xs">Copy link</span>
                     </>
                   )}
