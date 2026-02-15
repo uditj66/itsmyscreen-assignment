@@ -55,12 +55,12 @@ A full-stack application for creating and voting in polls with **live updates** 
 
 ## Tech Stack
 
-| Layer        | Technology |
-|-------------|------------|
-| Frontend    | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui–style components (Card, Button, Input, Progress, Alert), react-hook-form, Zod |
-| Auth        | NextAuth.js v4, Google OAuth, JWT sessions (30-day max age) |
-| Database    | MongoDB, Mongoose |
-| Live updates| Standalone Express SSE service (Node ≥18), CORS, Bearer token auth for notify |
+| Layer        | Technology                                                                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend     | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui–style components (Card, Button, Input, Progress, Alert), react-hook-form, Zod |
+| Auth         | NextAuth.js v4, Google OAuth, JWT sessions (30-day max age)                                                                                          |
+| Database     | MongoDB, Mongoose                                                                                                                                    |
+| Live updates | Standalone Express SSE service (Node ≥18), CORS, Bearer token auth for notify                                                                        |
 
 ---
 
@@ -111,9 +111,9 @@ itsmyscreen-assignment/
 
 ## Pages
 
-| Route | File | Description |
-|-------|------|-------------|
-| **`/`** | `frontend/app/page.tsx` | **Home – Create poll** – Form with question (min 5 chars) and options (min 2, add/remove). Client-side validation via Zod + react-hook-form. On success, redirects to `/poll/:id`. Shows root error (e.g. “Failed to create poll”) from API. |
+| Route            | File                              | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`/`**          | `frontend/app/page.tsx`           | **Home – Create poll** – Form with question (min 5 chars) and options (min 2, add/remove). Client-side validation via Zod + react-hook-form. On success, redirects to `/poll/:id`. Shows root error (e.g. “Failed to create poll”) from API.                                                                                                                                                                                                                                                  |
 | **`/poll/[id]`** | `frontend/app/poll/[id]/page.tsx` | **Poll view** – Fetches poll via `GET /api/poll/:id`. Shows question, options with vote counts and progress bars, total votes, “Copy link”. If not signed in: “Sign in with Google to vote”. If signed in and not voted: option buttons + “Submit vote”. If already voted: “You have already voted.” Opens EventSource to `NEXT_PUBLIC_SSE_SERVER_URL/stream/:id` for live updates (when URL is set); shows “Live” indicator. Handles 401 (sign in), 409 (already voted), and network errors. |
 
 **Layout (all pages):** `app/layout.tsx` – Root layout with Geist fonts, global styles, header (“Poll Rooms” link + `AuthStatus`), and `Providers` (NextAuth `SessionProvider`).
@@ -124,12 +124,12 @@ itsmyscreen-assignment/
 
 All under `frontend/app/api/`.
 
-| Method | Path | Handler | Description |
-|--------|------|---------|-------------|
-| **GET**  | `/api/auth/*` | NextAuth | NextAuth catch-all (sign in, sign out, callbacks, session). |
-| **POST** | `/api/auth/*` | NextAuth | Same. |
-| **POST** | `/api/poll/create` | `app/api/poll/create/route.ts` | Create poll. Body: `{ question: string, options: string[] }`. Validates: question trimmed, min 5 chars; options array min 2 items, each non-empty trimmed string. Returns `{ success: true, data: { id, question, options, createdAt, updatedAt } }`. 400 on validation error, 503 if DB unavailable, 500 on server error. |
-| **GET**  | `/api/poll/[id]` | `app/api/poll/[id]/route.ts` | Get poll by ID. If user is signed in (JWT), includes `hasVoted` by checking `voterUserIds`. Returns `{ success: true, data: PollData }` or error. 400 invalid id, 404 not found, 503 DB unavailable, 500 on error. |
+| Method   | Path                  | Handler                           | Description                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------- | --------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **GET**  | `/api/auth/*`         | NextAuth                          | NextAuth catch-all (sign in, sign out, callbacks, session).                                                                                                                                                                                                                                                                                                                                            |
+| **POST** | `/api/auth/*`         | NextAuth                          | Same.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **POST** | `/api/poll/create`    | `app/api/poll/create/route.ts`    | Create poll. Body: `{ question: string, options: string[] }`. Validates: question trimmed, min 5 chars; options array min 2 items, each non-empty trimmed string. Returns `{ success: true, data: { id, question, options, createdAt, updatedAt } }`. 400 on validation error, 503 if DB unavailable, 500 on server error.                                                                             |
+| **GET**  | `/api/poll/[id]`      | `app/api/poll/[id]/route.ts`      | Get poll by ID. If user is signed in (JWT), includes `hasVoted` by checking `voterUserIds`. Returns `{ success: true, data: PollData }` or error. 400 invalid id, 404 not found, 503 DB unavailable, 500 on error.                                                                                                                                                                                     |
 | **POST** | `/api/poll/[id]/vote` | `app/api/poll/[id]/vote/route.ts` | Vote for option. **Requires auth** (401 if not signed in). Body: `{ optionIndex: number }` (integer ≥ 0). Validates poll exists and `optionIndex < options.length`. Uses atomic `findOneAndUpdate` with `voterUserIds: { $ne: userId }` so one vote per user (409 if already voted). Then calls `sendPollUpdateToSSE()` to push update to SSE service. Returns `{ success: true }` or 400/404/409/500. |
 
 ---
@@ -138,9 +138,9 @@ All under `frontend/app/api/`.
 
 Run on port **5000** by default (`sse-service`).
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| **GET**  | `/stream/:pollId` | None | Opens SSE stream for that poll. Sets `Content-Type: text/event-stream`, sends `event: connected` with `{ pollId }`. Client is added to in-memory set for `pollId`. On request close, client is removed. |
+| Method   | Path              | Auth                                 | Description                                                                                                                                                                                                                          |
+| -------- | ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **GET**  | `/stream/:pollId` | None                                 | Opens SSE stream for that poll. Sets `Content-Type: text/event-stream`, sends `event: connected` with `{ pollId }`. Client is added to in-memory set for `pollId`. On request close, client is removed.                              |
 | **POST** | `/notify/:pollId` | `Authorization: Bearer <SSE_SECRET>` | Body: `{ question, options, totalVotes }`. If token ≠ `SSE_SECRET` → 401. Sends `event: update` with JSON payload to all clients for that `pollId`. Responds with `{ success: true, deliveredTo: number }`. 400 if `pollId` missing. |
 
 ---
@@ -149,12 +149,12 @@ Run on port **5000** by default (`sse-service`).
 
 **Poll (Mongoose)** – `frontend/models/Poll.ts`
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `question` | String | Required, minlength 5 |
-| `options` | Array | `{ text: String, votes: Number }`, required, min 2 items |
-| `voterUserIds` | [String] | Default `[]`, `select: false` (only used server-side to enforce one vote per user) |
-| `createdAt` / `updatedAt` | Date | From `timestamps: true` |
+| Field                     | Type     | Notes                                                                              |
+| ------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| `question`                | String   | Required, minlength 5                                                              |
+| `options`                 | Array    | `{ text: String, votes: Number }`, required, min 2 items                           |
+| `voterUserIds`            | [String] | Default `[]`, `select: false` (only used server-side to enforce one vote per user) |
+| `createdAt` / `updatedAt` | Date     | From `timestamps: true`                                                            |
 
 `hasVoted` is not stored; it is computed in GET `/api/poll/[id]` when a user is authenticated by checking if their `userId` (Google `sub`) is in `voterUserIds`.
 
@@ -216,23 +216,23 @@ Run on port **5000** by default (`sse-service`).
 
 Copy from `frontend/.env.example`.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MONGODB_URI` | Yes | MongoDB connection string (e.g. `mongodb://localhost:27017/poll-rooms`) |
-| `NEXT_PUBLIC_SSE_SERVER_URL` | For live updates | SSE base URL for browser (e.g. `http://localhost:5000`) |
-| `SSE_SERVER_URL` | For live updates | Same base URL for Next.js server to call `/notify/:pollId` |
-| `SSE_SECRET` | For live updates | Shared secret with SSE service; must match `sse-service/.env` |
-| `AUTH_SECRET` | Yes (for auth) | NextAuth secret (e.g. `openssl rand -base64 32`) |
-| `GOOGLE_CLIENT_ID` | Yes (for auth) | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Yes (for auth) | Google OAuth client secret |
+| Variable                     | Required         | Description                                                             |
+| ---------------------------- | ---------------- | ----------------------------------------------------------------------- |
+| `MONGODB_URI`                | Yes              | MongoDB connection string (e.g. `mongodb://localhost:27017/poll-rooms`) |
+| `NEXT_PUBLIC_SSE_SERVER_URL` | For live updates | SSE base URL for browser (e.g. `http://localhost:5000`)                 |
+| `SSE_SERVER_URL`             | For live updates | Same base URL for Next.js server to call `/notify/:pollId`              |
+| `SSE_SECRET`                 | For live updates | Shared secret with SSE service; must match `sse-service/.env`           |
+| `AUTH_SECRET`                | Yes (for auth)   | NextAuth secret (e.g. `openssl rand -base64 32`)                        |
+| `GOOGLE_CLIENT_ID`           | Yes (for auth)   | Google OAuth client ID                                                  |
+| `GOOGLE_CLIENT_SECRET`       | Yes (for auth)   | Google OAuth client secret                                              |
 
 ### SSE Service (`sse-service/.env`)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `PORT` | No (default 5000) | Port the SSE service listens on |
-| `SSE_SECRET` | Yes | Must match frontend `SSE_SECRET` for `/notify` |
-| `ALLOWED_ORIGIN` | No (default `*`) | CORS origin (e.g. `http://localhost:3000`) |
+| Variable         | Required          | Description                                    |
+| ---------------- | ----------------- | ---------------------------------------------- |
+| `PORT`           | No (default 5000) | Port the SSE service listens on                |
+| `SSE_SECRET`     | Yes               | Must match frontend `SSE_SECRET` for `/notify` |
+| `ALLOWED_ORIGIN` | No (default `*`)  | CORS origin (e.g. `http://localhost:3000`)     |
 
 ---
 
@@ -242,6 +242,7 @@ Copy from `frontend/.env.example`.
    Have MongoDB running and set `MONGODB_URI` in `frontend/.env`.
 
 2. **Frontend**
+
    ```bash
    cd frontend
    cp .env.example .env
@@ -249,15 +250,18 @@ Copy from `frontend/.env.example`.
    npm install
    npm run dev
    ```
+
    App: [http://localhost:3000](http://localhost:3000).
 
 3. **SSE service** (for live updates)
+
    ```bash
    cd sse-service
    # Create .env: PORT=5000, SSE_SECRET=<same as frontend>, ALLOWED_ORIGIN=http://localhost:3000
    npm install
    npm run dev
    ```
+
    Listens on port 5000.
 
 4. **Run order**  
@@ -272,8 +276,6 @@ Copy from `frontend/.env.example`.
 3. `lib/sse.ts` POSTs to `SSE_SERVER_URL/notify/:pollId` with `Authorization: Bearer SSE_SECRET` and `{ question, options, totalVotes }`.
 4. SSE service receives notify, validates Bearer token, and sends `event: update` with JSON to all clients for that `pollId`.
 5. Poll page receives event, parses JSON, validates with Zod, updates state → UI re-renders with new counts.
-
-
 
 ---
 
@@ -326,7 +328,7 @@ So cookie- and IP-based approaches either block legitimate voters (same WiFi) or
 ## Limitations of the Project
 
 - **Sign-in required to vote:** Only signed-in users (Google) can vote. There is no anonymous or “quick vote without account” option, so casual or one-off polls without sign-in are not supported.
-- **No record of which option each user chose:** The app stores *who* voted (`voterUserIds`) and the *totals* per option, but not the mapping “user X voted for option Y.” You cannot show “You voted for Option B,” audit who chose what, or resolve disputes about a specific vote.
+- **No record of which option each user chose:** The app stores _who_ voted (`voterUserIds`) and the _totals_ per option, but not the mapping “user X voted for option Y.” You cannot show “You voted for Option B,” audit who chose what, or resolve disputes about a specific vote.
 - **Polls are link-only; no listing:** There is no index or search of polls. You must have the poll URL to open a poll, so there is no “browse all polls” or discovery—everything is share-the-link only.
 
 ---
@@ -341,15 +343,15 @@ So cookie- and IP-based approaches either block legitimate voters (same WiFi) or
 
 ## Quick Reference – All Routes & Pages
 
-| Type | Method | Path | Purpose |
-|------|--------|------|---------|
-| Page | GET | `/` | Create poll form |
-| Page | GET | `/poll/[id]` | View poll, vote, live updates |
-| API | GET/POST | `/api/auth/*` | NextAuth |
-| API | POST | `/api/poll/create` | Create poll |
-| API | GET | `/api/poll/[id]` | Get poll (+ hasVoted if authenticated) |
-| API | POST | `/api/poll/[id]/vote` | Vote (auth required, one per user) |
-| SSE | GET | `/stream/:pollId` | Subscribe to live updates for poll |
-| SSE | POST | `/notify/:pollId` | Notify all subscribers (Bearer token) |
+| Type | Method   | Path                  | Purpose                                |
+| ---- | -------- | --------------------- | -------------------------------------- |
+| Page | GET      | `/`                   | Create poll form                       |
+| Page | GET      | `/poll/[id]`          | View poll, vote, live updates          |
+| API  | GET/POST | `/api/auth/*`         | NextAuth                               |
+| API  | POST     | `/api/poll/create`    | Create poll                            |
+| API  | GET      | `/api/poll/[id]`      | Get poll (+ hasVoted if authenticated) |
+| API  | POST     | `/api/poll/[id]/vote` | Vote (auth required, one per user)     |
+| SSE  | GET      | `/stream/:pollId`     | Subscribe to live updates for poll     |
+| SSE  | POST     | `/notify/:pollId`     | Notify all subscribers (Bearer token)  |
 
-This README and **LIVE-UPDATES-ANALYSIS.md** together document the project, edge cases, and all routes and pages for anyone who wants to understand or extend the application.
+The README file document the project, edge cases, and all routes and pages for anyone who wants to understand or extend the application.
