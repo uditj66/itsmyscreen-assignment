@@ -27,6 +27,7 @@ export async function sendPollUpdateToSSE(
         totalVotes: summary.totalVotes,
       }),
     });
+    if (!res.ok) return null;
     const json = await res.json();
     if (json.success === true && typeof json.deliveredTo === "number") {
       return { deliveredTo: json.deliveredTo };
