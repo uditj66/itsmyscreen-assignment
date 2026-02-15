@@ -103,7 +103,7 @@ itsmyscreen-assignment/
 │   │   └── types.ts            # PollId, ClientSet, NotifyBody
 │   ├── .env                    # PORT, SSE_SECRET, ALLOWED_ORIGIN
 │   └── package.json
-├── LIVE-UPDATES-ANALYSIS.md     # Detailed SSE flow and troubleshooting
+├
 └── README.md                    # This file
 ```
 
