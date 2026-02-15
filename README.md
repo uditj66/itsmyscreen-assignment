@@ -20,6 +20,7 @@ A full-stack application for creating and voting in polls with **live updates** 
 - [Authentication](#authentication)
 - [Fairness Mechanisms (One Vote per Account)](#fairness-mechanisms-one-vote-per-account)
 - [Why Not IP- or Cookie-Based Voting?](#why-not-ip--or-cookie-based-voting)
+- [Limitations of the Project](#limitations-of-the-project)
 - [What We Could Improve Next](#what-we-could-improve-next)
 
 ---
@@ -319,6 +320,14 @@ Alternatives like **hashing IP** or **using cookies** to limit votes are simpler
 - **Different browser or device:** Cookies are per-browser (and per-device). The same person can vote once in Chrome and again in Firefox, or on phone and laptop, and get multiple votes.
 
 So cookie- and IP-based approaches either block legitimate voters (same WiFi) or fail to stop one person from voting multiple times (VPN, clear cookies, different browser). Using **authentication (Google account)** plus **atomic server-side checks** gives one stable identity per person and prevents double-voting even when the same account is used from multiple devices or tabs.
+
+---
+
+## Limitations of the Project
+
+- **Sign-in required to vote:** Only signed-in users (Google) can vote. There is no anonymous or “quick vote without account” option, so casual or one-off polls without sign-in are not supported.
+- **No record of which option each user chose:** The app stores *who* voted (`voterUserIds`) and the *totals* per option, but not the mapping “user X voted for option Y.” You cannot show “You voted for Option B,” audit who chose what, or resolve disputes about a specific vote.
+- **Polls are link-only; no listing:** There is no index or search of polls. You must have the poll URL to open a poll, so there is no “browse all polls” or discovery—everything is share-the-link only.
 
 ---
 
